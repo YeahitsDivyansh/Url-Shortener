@@ -8,50 +8,57 @@ import {
 } from "@/components/ui/card"
 import { Input } from "./ui/input"
 import { Button } from "./ui/button"
-import { BeatLoader } from "react-spinners"
-import Error from "./error"
+import { BeatLoader } from "react-spinners" // Loading spinner component
+import Error from "./error" // Custom error component
 import { useEffect, useState } from "react"
-import * as Yup from 'yup'
-import useFetch from "@/hooks/use-fetch"
-import { signup } from "@/db/apiAuth"
-import { useNavigate, useSearchParams } from "react-router-dom"
-import { UrlState } from "@/context"
+import * as Yup from 'yup' // Schema validation library
+import useFetch from "@/hooks/use-fetch" // Custom hook for API calls
+import { signup } from "@/db/apiAuth" // API function for signing up
+import { useNavigate, useSearchParams } from "react-router-dom" // Routing utilities
+import { UrlState } from "@/context" // Context for global state management
 
 const Signup = () => {
-
-    const [errors, setErrors] = useState([])
+    // State to hold form validation errors
+    const [errors, setErrors] = useState([]);
+    // State to manage form data
     const [formData, setFormData] = useState({
         name: "",
         email: "",
         password: "",
-        profile_pic: null,
+        profile_pic: null, // File input for profile picture
     });
 
-    const navigate = useNavigate()
-    let [searchParams] = useSearchParams();
-    const longLink = searchParams.get("createNew");
+    const navigate = useNavigate(); // Hook for programmatic navigation
+    let [searchParams] = useSearchParams(); // Access query parameters from the URL
+    const longLink = searchParams.get("createNew"); // Get the "createNew" query parameter
+
+    // Handle input changes for text and file inputs
     const handleInputChange = (e) => {
         const { name, value, files } = e.target;
         setFormData((prevState) => ({
             ...prevState,
-            [name]: files ? files[0] : value,
+            [name]: files ? files[0] : value, // Update state with file or text value
         }));
-    }
+    };
 
+    // Custom hook to handle API call for signup
     const { data, error, loading, fn: fnSignup } = useFetch(signup, formData);
-    const { fetchUser } = UrlState()
+    const { fetchUser } = UrlState(); // Function to fetch user data from global state
 
+    // Effect to handle navigation after successful signup
     useEffect(() => {
         if (error === null && data) {
+            // Navigate to the dashboard with optional query parameter
             navigate(`/dashboard?${longLink ? `createNew=${longLink}` : ""}`);
-            fetchUser();
+            fetchUser(); // Fetch user data after successful signup
         }
+    }, [error, loading]); // Trigger effect when error or loading state changes
 
-    }, [error, loading]);
-
+    // Function to handle the signup process
     const handleSignup = async () => {
-        setErrors([])
+        setErrors([]); // Clear previous errors
         try {
+            // Define validation schema using Yup
             const schema = Yup.object().shape({
                 name: Yup.string().required("Name is required"),
                 email: Yup.string()
@@ -63,17 +70,17 @@ const Signup = () => {
                 profile_pic: Yup.mixed().required("Profile picture is required"),
             });
 
+            // Validate form data against the schema
             await schema.validate(formData, { abortEarly: false });
-            //api call
+            // Call the signup API function
             await fnSignup();
         } catch (e) {
+            // Handle validation errors
             const newErrors = {};
-
             e?.inner?.forEach((err) => {
-                newErrors[err.path] = err.message;
+                newErrors[err.path] = err.message; // Map errors to their respective fields
             });
-
-            setErrors(newErrors);
+            setErrors(newErrors); // Update errors state
         }
     };
 
@@ -84,9 +91,11 @@ const Signup = () => {
                 <CardDescription>
                     Create a new account if you haven&rsquo;t already
                 </CardDescription>
+                {/* Display error message if API call fails */}
                 {error && <Error message={error.message} />}
             </CardHeader>
             <CardContent className="space-y-2">
+                {/* Name input field */}
                 <div className="space-y-1">
                     <Input
                         name="name"
@@ -94,8 +103,10 @@ const Signup = () => {
                         placeholder="Enter Name"
                         onChange={handleInputChange}
                     />
+                    {/* Display name validation error */}
                     {errors.name && <Error message={errors.name} />}
                 </div>
+                {/* Email input field */}
                 <div className="space-y-1">
                     <Input
                         name="email"
@@ -103,8 +114,10 @@ const Signup = () => {
                         placeholder="Enter Email"
                         onChange={handleInputChange}
                     />
+                    {/* Display email validation error */}
                     {errors.email && <Error message={errors.email} />}
                 </div>
+                {/* Password input field */}
                 <div className="space-y-1">
                     <Input
                         name="password"
@@ -112,8 +125,10 @@ const Signup = () => {
                         placeholder="Enter Password"
                         onChange={handleInputChange}
                     />
+                    {/* Display password validation error */}
                     {errors.password && <Error message={errors.password} />}
                 </div>
+                {/* Profile picture file input */}
                 <div className="space-y-1">
                     <Input
                         name="profile_pic"
@@ -121,10 +136,12 @@ const Signup = () => {
                         accept="image/*"
                         onChange={handleInputChange}
                     />
+                    {/* Display profile picture validation error */}
                     {errors.profile_pic && <Error message={errors.profile_pic} />}
                 </div>
             </CardContent>
             <CardFooter>
+                {/* Signup button with loading state */}
                 <Button onClick={handleSignup}>
                     {loading ? <BeatLoader size={10} color="#36d7b7" /> : (
                         "Create Account"
@@ -132,8 +149,7 @@ const Signup = () => {
                 </Button>
             </CardFooter>
         </Card>
-
-    )
-}
+    );
+};
 
 export default Signup;
